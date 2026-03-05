@@ -1,0 +1,245 @@
+---
+template: main.html
+title: Features
+description: "Explore everything PassedBox offers — a fully encrypted local file system with built-in editing,
+previewing, and a Dead Man's Switch."
+---
+{{define "content"}}
+<section class="section content-page features-page">
+    <div class="page-header center-text">
+        <h1 class="page-title">Everything You Need, <span class="text-gradient">Fully Encrypted</span></h1>
+        <p class="page-subtitle">PassedBox works like a file system you already know — folders, files, drag &amp;
+            drop — except everything is encrypted at rest with AES-256-GCM. Your keys never leave your device.</p>
+    </div>
+
+    <!-- Encryption & Security -->
+    <div class="feature-section">
+        <div class="feature-section-header">
+            <span class="feature-section-icon">🔐</span>
+            <h2>Military-Grade <span class="text-gradient">Encryption</span></h2>
+        </div>
+        <div class="grid feature-grid">
+            <div class="card glass-card">
+                <div class="card-icon">🛡️</div>
+                <h3>AES-256-GCM</h3>
+                <p>Every file is individually encrypted with AES-256 in GCM mode, providing both confidentiality and
+                    integrity verification. Tampered data is automatically detected.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🔑</div>
+                <h3>Argon2id Key Derivation</h3>
+                <p>Your master password is strengthened with Argon2id — the winner of the Password Hashing Competition —
+                    making brute-force attacks computationally impractical.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">✂️</div>
+                <h3>Shamir's Secret Sharing</h3>
+                <p>Your master key is split into cryptographic shares. Any 2 of 3 shares can reconstruct it — enabling
+                    secure recovery without a single point of failure.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🔒</div>
+                <h3>Hardware-Locked Passwords</h3>
+                <p>Optionally tie your vault password to a specific drive's serial number. The vault becomes
+                    undecryptable on any other device — even with the correct password.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🧠</div>
+                <h3>Zero-Knowledge Architecture</h3>
+                <p>No accounts, no telemetry, no cloud sync. PassedBox never sees your data, your keys, or even knows
+                    you exist. It's just you and your vault file.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📦</div>
+                <h3>Portable Vault Files</h3>
+                <p>Each vault is a single <code>.pbx</code> directory you can store anywhere — USB drives, NAS, cloud
+                    storage, or your local disk. Move it wherever you want.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Management -->
+    <div class="feature-section">
+        <div class="feature-section-header">
+            <span class="feature-section-icon">📂</span>
+            <h2>Full <span class="text-gradient">File System</span></h2>
+        </div>
+        <div class="grid feature-grid">
+            <div class="card glass-card">
+                <div class="card-icon">📁</div>
+                <h3>Folders &amp; Hierarchy</h3>
+                <p>Organize your files in nested folders just like your operating system. Create, rename, move, and
+                    delete folders freely within the encrypted vault.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📥</div>
+                <h3>Import Files &amp; Folders</h3>
+                <p>Import individual files or entire folder trees from your system. The directory structure is preserved
+                    and everything is encrypted as it enters the vault.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📤</div>
+                <h3>Export &amp; Decrypt</h3>
+                <p>Export single files or bulk-select multiple items to decrypt and save them back to your file system.
+                    Folder structures are preserved on export.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">✋</div>
+                <h3>Drag &amp; Drop</h3>
+                <p>Drag files between folders, drop them on breadcrumbs to move, or drag from your desktop into the
+                    vault. It works just like you'd expect.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📋</div>
+                <h3>Cut, Copy &amp; Paste</h3>
+                <p>Full clipboard support with Ctrl+X, Ctrl+C, Ctrl+V. Copy uses copy-on-write pointers for instant
+                    duplication without wasting space.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🔄</div>
+                <h3>Cross-Vault Operations</h3>
+                <p>Copy files between different vaults seamlessly. Data is re-encrypted with the target vault's key
+                    automatically — no manual export/import needed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewing & Editing -->
+    <div class="feature-section">
+        <div class="feature-section-header">
+            <span class="feature-section-icon">👁️</span>
+            <h2>Built-In <span class="text-gradient">Viewer &amp; Editor</span></h2>
+        </div>
+        <div class="grid feature-grid">
+            <div class="card glass-card">
+                <div class="card-icon">🖼️</div>
+                <h3>Image Preview</h3>
+                <p>View images (PNG, JPG, GIF, SVG, WebP) directly inside the vault — decrypted in memory, never
+                    written to disk.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🎬</div>
+                <h3>Video &amp; Audio Playback</h3>
+                <p>Play MP4, WebM, MP3, WAV, and OGG files with the built-in media player. No external apps needed —
+                    everything stays encrypted until the moment it's rendered.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📄</div>
+                <h3>PDF Viewer</h3>
+                <p>Open and read PDF documents directly within the app. Decrypted in memory and rendered in an embedded
+                    viewer.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">✏️</div>
+                <h3>Monaco Code Editor</h3>
+                <p>Edit text files with the same editor that powers VS Code. Full syntax highlighting for 30+ languages
+                    including JavaScript, Python, Go, HTML, CSS, JSON, YAML, and more.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📝</div>
+                <h3>Create &amp; Edit In-Vault</h3>
+                <p>Create new text files directly inside the vault and edit them with Ctrl+E. Save with Ctrl+S. No need
+                    to export, edit, and re-import.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🔍</div>
+                <h3>Force Text Mode</h3>
+                <p>Open any file as plain text — useful for inspecting binary metadata, debugging, or viewing files with
+                    unrecognized extensions.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface & UX -->
+    <div class="feature-section">
+        <div class="feature-section-header">
+            <span class="feature-section-icon">⚡</span>
+            <h2>Power User <span class="text-gradient">Interface</span></h2>
+        </div>
+        <div class="grid feature-grid">
+            <div class="card glass-card">
+                <div class="card-icon">🔎</div>
+                <h3>Global Search</h3>
+                <p>Search across all unlocked vaults simultaneously. Results show full file paths with breadcrumb
+                    navigation — click to jump directly to any file.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📊</div>
+                <h3>Grid &amp; List Views</h3>
+                <p>Switch between a visual grid view with type-based icons and a compact list view with file sizes.
+                    Toggle with a single click.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">⌨️</div>
+                <h3>Keyboard Shortcuts</h3>
+                <p>Navigate with arrow keys, select with Shift, delete with Del, rename with F2, search with Ctrl+F,
+                    create files & folders with Ctrl+N — all without touching the mouse.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🗂️</div>
+                <h3>Breadcrumb Navigation</h3>
+                <p>Visual breadcrumb trail at the top with full drag-and-drop support. Drop files onto any breadcrumb to
+                    move them instantly.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📏</div>
+                <h3>Multi-Select</h3>
+                <p>Click to select, Ctrl+Click for individual multi-select, Shift+Click for range selection. Bulk
+                    delete, export, move, or copy entire selections at once.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🌙</div>
+                <h3>Dark &amp; Light Themes</h3>
+                <p>Full dark mode and light mode support with automatic system detection. Toggle freely from the
+                    toolbar.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dead Man's Switch -->
+    <div class="feature-section">
+        <div class="feature-section-header">
+            <span class="feature-section-icon">🛡️</span>
+            <h2>Dead Man's <span class="text-gradient">Switch</span></h2>
+        </div>
+        <p class="feature-section-desc center-text">Ensure your vault is accessible to your trusted contacts if you
+            become unavailable. Your files never leave your device — only an encrypted key share is stored on the
+            server.</p>
+        <div class="grid feature-grid">
+            <div class="card glass-card">
+                <div class="card-icon">⏰</div>
+                <h3>Credit Expiration Trigger</h3>
+                <p>When enabled, the encrypted key share is released when your prepaid credits run out. Don't renew to
+                    trigger it — or buy more anytime to keep it held.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">📅</div>
+                <h3>Keep-Alive Check-In</h3>
+                <p>When enabled, you must periodically confirm you're active. Miss your check-ins via calendar reminders
+                    or web push notifications and the share is released.</p>
+            </div>
+            <div class="card glass-card">
+                <div class="card-icon">🔓</div>
+                <h3>Passwordless Recovery</h3>
+                <p>Once triggered, anyone with the vault file can decrypt it using Share 1 + Share 3, requiring no
+                    password. Then set a new password to re-secure the vault.</p>
+            </div>
+        </div>
+
+        <div class="center-text" style="margin-top: 2rem;">
+            <a href="{{.BasePath}}pricing" class="btn btn-outline btn-lg">View Pricing &rarr;</a>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="feature-section center-text" style="padding-top: 2rem;">
+        <h2>Ready to Secure Your Files?</h2>
+        <p>Download PassedBox for free. No account required.</p>
+        <div class="hero-cta-group" style="justify-content: center; margin-top: 1.5rem;">
+            <a href="https://github.com/altlimit/passedbox/releases" class="btn btn-primary btn-lg" target="_blank"
+                rel="noopener noreferrer">Download for Free</a>
+            <a href="{{.BasePath}}challenge" class="btn btn-outline btn-lg">Hack the Vault (1 XMR)</a>
+        </div>
+    </div>
+</section>
+{{end}}
