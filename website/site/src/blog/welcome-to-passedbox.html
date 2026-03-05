@@ -1,0 +1,54 @@
+---
+template: main.html
+title: Introducing PassedBox
+date: Mar 6, 2026
+summary: Welcome to the first release of PassedBox.
+---
+{{define "content"}}
+<article class="section content-page blog-post">
+    <div class="post-header">
+        <a href="{{.BasePath}}blog" class="back-link">&larr; Back to Blog</a>
+        <h1 class="post-title"><span class="text-gradient">{{.title}}</span></h1>
+        <div class="post-meta">Published on {{.date}}</div>
+    </div>
+
+    <div class="glass-card padded-card post-body">
+        <p class="lead-text">Today, we are thrilled to announce the alpha release of PassedBox. In a world where every
+            cloud service wants a piece of your data, we decided to take a step back and bring true ownership back to
+            the user.</p>
+
+        <h3>Why Local-First?</h3>
+        <p>The cloud is convenient, but it introduces a massive attack surface. Whether it's breaches, bad actors, or
+            policy changes, trusting an external provider with your most confidential files is a risk. PassedBox is
+            fundamentally different. It operates 100% locally. Encryption and decryption happen on your device. Your
+            keys never leave your machine.</p>
+
+        <h3>The Monero Challenge</h3>
+        <p>We believe in "trust, but verify" - and then verify some more. That's why we invite everyone to inspect our
+            open-source codebase. To make it interesting, we've launched <a href="{{.BasePath}}challenge">The Vault
+                Challenge</a>. We've published a vault encrypted with PassedBox containing the keys to a Monero wallet
+            holding 1 XMR. If you can break it, you keep it. Period.</p>
+
+        <h3>What's Next?</h3>
+        <p>This is just the beginning. The desktop application is free forever. To support development,
+            we're launching <strong>Premium Mode</strong>. For a one-time purchase of $15, you get
+            1 year of Dead Man's Switch credits &mdash; no subscription, no recurring charges. Buy more
+            anytime to extend. Your files never leave your device; only an encrypted key share
+            (generated via Shamir's Secret Sharing) is stored on our server.</p>
+
+        <p>The switch has two independent triggers you can enable separately or together:</p>
+        <ul style="margin-bottom: 1rem; padding-left: 1.5rem;">
+            <li><strong>Credit Expiration:</strong> The share is released when your credits run out. Simply don't
+                buy more to trigger it, or purchase additional credits anytime to keep it held.</li>
+            <li><strong>Keep-Alive Check-In:</strong> Periodically confirm you're active via calendar reminders or web
+                push notifications. Miss your check-ins and the share is released.</li>
+        </ul>
+
+        <p>Once released, anyone with the vault file can decrypt it using Share1 + Share3, requiring no password.
+            You can also self-host the Dead Man's Switch server entirely for free.</p>
+
+        <p>Download the free app today from our <a href="https://github.com/altlimit/passedbox/releases"
+                target="_blank">GitHub releases page</a>. Stay secure.</p>
+    </div>
+</article>
+{{end}}

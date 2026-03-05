@@ -1,0 +1,15 @@
+.task
+bin
+frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+*.vault
+*.db
+*.pbx
+passedbox.exe
+passedbox
+*.log
+*.syso
+desktop/frontend/bindings
+__debug_bin.exe

@@ -1,0 +1,149 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'desktop/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            artifact_name: passedbox-windows
+          - os: macos-latest
+            platform: darwin
+            artifact_name: passedbox-macos
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: passedbox-linux
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate Version Tag
+        id: version
+        shell: bash
+        run: |
+          TAG="v$(date -u +'%Y.%m.%d')"
+          if [ "${{ github.run_attempt }}" -gt 1 ]; then
+            TAG="${TAG}.${{ github.run_attempt }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.0
+          cache: true
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Install Wails 3 CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Build Application
+        working-directory: ./desktop
+        run: wails3 build EXTRA_LDFLAGS="-X main.AppVersion=${{ steps.version.outputs.tag }}"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign and Package (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          cd desktop/bin
+          for file in *; do
+            [ -f "$file" ] || continue
+            cosign sign-blob --yes "$file" --bundle "${file}.bundle"
+          done
+          7z a -tzip "../../${{ matrix.artifact_name }}.zip" *
+
+      - name: Sign and Package (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          cd desktop/bin
+          for file in *; do
+            [ -f "$file" ] || continue
+            cosign sign-blob --yes "$file" --bundle "${file}.bundle"
+          done
+          zip -r "../../${{ matrix.artifact_name }}.zip" *
+
+      - name: Sign and Package (macOS)
+        if: matrix.platform == 'darwin'
+        shell: bash
+        run: |
+          cd desktop/bin
+          # macOS may produce .app bundles (directories) — tar them first to sign
+          for item in *; do
+            if [ -d "$item" ]; then
+              tar -cf "${item}.tar" "$item"
+              cosign sign-blob --yes "${item}.tar" --bundle "${item}.tar.bundle"
+            elif [ -f "$item" ]; then
+              cosign sign-blob --yes "$item" --bundle "${item}.bundle"
+            fi
+          done
+          zip -r "../../${{ matrix.artifact_name }}.zip" *
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.zip
+          retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Version Tag
+        id: version
+        run: |
+          TAG="v$(date -u +'%Y.%m.%d')"
+          if [ "${{ github.run_attempt }}" -gt 1 ]; then
+            TAG="${TAG}.${{ github.run_attempt }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect Release Files
+        run: |
+          mkdir release
+          find artifacts -type f -name '*.zip' -exec mv {} release/ \;
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: PassedBox ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: release/*

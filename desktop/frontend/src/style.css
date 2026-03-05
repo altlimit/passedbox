@@ -1,0 +1,351 @@
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""),
+    url("/Inter-Medium.ttf") format("truetype");
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+:root {
+  /* Modern Minimal Theme - "PassedBox Teal" */
+  --bg-app: #09090b;
+  /* Zinc 950 */
+  --bg-surface: #121214;
+  /* Darker Zinc */
+  --bg-surface-hover: #1e1e21;
+  /* Zinc 800ish */
+  --bg-overlay: rgba(9, 9, 11, 0.85);
+
+  --border: #222226;
+  --border-hover: #2e2e33;
+
+  --primary: #0B9684;
+  /* PassedBox Teal */
+  --primary-hover: #0a8a79;
+  --primary-text: #ffffff;
+  --accent: #14b8a6;
+  /* Teal 500 */
+
+  --text-main: #fafafa;
+  /* Zinc 50 */
+  --text-muted: #a1a1aa;
+  /* Zinc 400 */
+  --text-faint: #52525b;
+  /* Zinc 600 */
+
+  --danger: #ef4444;
+  /* Red 500 */
+  --success: #22c55e;
+  /* Green 500 */
+  --warning: #f59e0b;
+  /* Amber 500 */
+
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --radius: 0.5rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+:root[data-theme="light"] {
+  /* Light Theme */
+  --bg-app: #ffffff;
+  /* White */
+  --bg-surface: #f4f4f5;
+  /* Zinc 100 */
+  --bg-surface-hover: #e4e4e7;
+  /* Zinc 200 */
+  --bg-overlay: rgba(255, 255, 255, 0.8);
+
+  --border: #e4e4e7;
+  /* Zinc 200 */
+  --border-hover: #d4d4d8;
+  /* Zinc 300 */
+
+  --primary: #0B9684;
+  --primary-hover: #0a8a79;
+  --primary-text: #ffffff;
+  --accent: #0f766e;
+
+  --text-main: #18181b;
+  /* Zinc 900 */
+  --text-muted: #71717a;
+  /* Zinc 500 */
+  --text-faint: #a1a1aa;
+  /* Zinc 400 */
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: none;
+  /* Override any potential max-width */
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+p {
+  margin: 0 0 1rem 0;
+  color: var(--text-muted);
+}
+
+/* Components */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+  box-shadow: 0 4px 12px rgba(11, 150, 132, 0.2);
+}
+
+button.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: 0 4px 15px rgba(11, 150, 132, 0.4);
+}
+
+button.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+button.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+button.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+button.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-main);
+}
+
+button.icon-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  /* Important: remove global button padding for icons */
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  border-radius: 50%;
+}
+
+button.icon-btn:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-main);
+}
+
+button.icon-btn.accent {
+  color: var(--primary);
+}
+
+button.icon-btn.accent:hover:not(:disabled) {
+  background: rgba(11, 150, 132, 0.1);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-main);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.875rem;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

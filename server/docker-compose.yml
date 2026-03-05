@@ -1,0 +1,17 @@
+services:
+  server:
+    build: .
+    ports:
+      - "8085:8085"
+    volumes:
+      - passedbox-data:/app/data
+    environment:
+      - DATA_DIR=/app/data
+      - ADDR=:8085
+      - WORKER_INTERVAL=1h
+      # - DATASTORE_PROJECT_ID=my-project  # Uncomment for Cloud Datastore
+      # - ENCRYPTION_KEY=your-32-byte-key  # Optional encryption key
+    restart: unless-stopped
+
+volumes:
+  passedbox-data:

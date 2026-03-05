@@ -1,0 +1,38 @@
+name: Server Deploy
+
+on:
+  push:
+    paths:
+      - "server/**"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - run: |
+          cd server/frontend
+          npm install
+          npm run build
+      - name: Auth GCloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_KEY }}
+          project_id: passedbox
+      - name: Set up Google Cloud SDK with App Engine Go component
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          gcloud_version: 'latest'
+          gcloud_component: 'app-engine-go'
+      - name: Deploy services
+        run: |
+          gcloud app deploy server/backend/cron.yaml -q
+          gcloud app deploy server/backend/app.yaml --version=v${GITHUB_RUN_NUMBER} -q
+          gcloud app versions list --service="default" --format="value(version.id)" --sort-by="~version.createTime" | tail -n +3 | xargs -r gcloud app versions delete --service="default" --quiet

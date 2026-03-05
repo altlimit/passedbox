@@ -1,0 +1,67 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Wails3 Dev",
+            "type": "shell",
+            "command": "wails3 dev -config ./build/config.yml",
+            "options": {
+                "cwd": "${workspaceFolder}/desktop"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            }
+        },
+        {
+            "label": "Air (Backend)",
+            "type": "shell",
+            "command": "air",
+            "options": {
+                "env": {
+                    "DATA_DIR": "./tmp"
+                },
+                "cwd": "${workspaceFolder}/server/backend"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            }
+        },
+        {
+            "label": "NPM Dev (Frontend)",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/server/frontend"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            }
+        },
+        {
+            "label": "Run All Dev",
+            "dependsOn": [
+                "Wails3 Dev",
+                "Air (Backend)",
+                "NPM Dev (Frontend)"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

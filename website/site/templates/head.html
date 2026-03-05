@@ -1,0 +1,17 @@
+{{define "head"}}
+{{$site := data "site.json"}}
+<meta charset="utf-8">
+<title>{{if .Title}}{{.Title}} - {{end}}{{if .Meta.title}}{{.Meta.title}} - {{end}}{{$site.title}}</title>
+<meta name="description" content="{{if .Meta.description}}{{.Meta.description}}{{else}}{{$site.description}}{{end}}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="{{.BasePath}}img/appicon.png">
+<link rel="stylesheet" href="{{.BasePath}}css/styles.css">
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+{{template "addHead" .}}
+{{end}}
+
+{{define "addHead"}}{{end}}
+{{define "title"}}{{end}}

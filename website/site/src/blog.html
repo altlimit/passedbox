@@ -1,0 +1,23 @@
+---
+template: main.html
+title: Blog
+---
+{{define "content"}}
+<section class="section content-page blog-page">
+    <div class="page-header center-text">
+        <h1 class="page-title">Latest <span class="text-gradient">Updates</span></h1>
+        <p class="page-subtitle">News, release notes, and security insights from the PassedBox team.</p>
+    </div>
+
+    <div class="blog-grid grid">
+        <div class="blog-card glass-card">
+            <div class="blog-meta">Feb 21, 2026</div>
+            <h3><a href="{{.BasePath}}blog/welcome-to-passedbox">Introducing PassedBox: The Local-First Encrypted
+                    Vault</a></h3>
+            <p>Welcome to the first release of PassedBox. We built this because we believe your data should stay yours,
+                forever.</p>
+            <a href="{{.BasePath}}blog/welcome-to-passedbox" class="read-more">Read Article &rarr;</a>
+        </div>
+    </div>
+</section>
+{{end}}

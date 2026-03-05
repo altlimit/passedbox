@@ -1,0 +1,52 @@
+---
+template: main.html
+title: The 1 XMR Vault Challenge
+---
+{{define "content"}}
+<section class="section content-page challenge-page">
+    <div class="page-header center-text">
+        <h1 class="page-title"><span class="text-gradient">The Vault Challenge</span></h1>
+        <p class="page-subtitle">We put our money where our mouth is. Crack this vault and claim 1 XMR.</p>
+    </div>
+    <div class="glass-card padded-card main-challenge-card">
+        <div class="challenge-content">
+            <h2>Break the Encryption, Win Monero</h2>
+            <p class="lead-text">We are confident in PassedBox's security. To prove it, we've created a downloadable
+                vault containing the seed phrase to a Monero wallet equipped with 1 XMR.</p>
+
+            <div class="challenge-steps">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <div class="step-info">
+                        <h4>Download the Vault</h4>
+                        <p>Get the encrypted <code>.pbx</code> vault file containing the wallet keys.</p>
+                        <a href="https://public.passedbox.com/vaults/challenge.zip" class="btn btn-outline margin-top"
+                            download="challenge.zip">Download Vault File</a>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <div class="step-info">
+                        <h4>Crack It</h4>
+                        <p>Use any method you like to bypass the encryption and open the vault.</p>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <div class="step-info">
+                        <h4>Claim the Monero</h4>
+                        <p>Inside, you will find the wallet keys to immediately withdraw the 1 XMR. No questions asked.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <strong>Rules:</strong> There are no rules. If you can open the vault, the Monero is yours. We just ask
+                that you responsibly disclose the vulnerability or methodology to us on GitHub afterwards so we can
+                patch it and continue improving the ecosystem.
+            </div>
+        </div>
+    </div>
+</section>
+{{end}}

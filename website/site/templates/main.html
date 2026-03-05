@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{ template "head" . }}
+</head>
+
+<body>
+    {{ template "nav" . }}
+
+    <main class="main-content">
+        {{ template "content" . }}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <img src="{{.BasePath}}img/appicon.png" alt="PassedBox Logo" class="footer-logo">
+                <div class="footer-brand-info">
+                    <span class="footer-brand-text">PassedBox</span>
+                    <p class="footer-motto">Your digital fortress. Encrypted, local, secure.</p>
+                </div>
+            </div>
+            <div class="footer-links-group">
+                <div class="footer-links-col">
+                    <h4>Product</h4>
+                    <a href="{{.BasePath}}">Home</a>
+                    <a href="{{.BasePath}}features">Features</a>
+                    <a href="{{.BasePath}}pricing">Pricing</a>
+                    <a href="{{.BasePath}}challenge">The Challenge</a>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Resources</h4>
+                    <a href="{{.BasePath}}blog">Blog</a>
+                    <a href="https://github.com/altlimit/passedbox" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container footer-bottom-container">
+                <p>&copy; 2026 PassedBox. All rights reserved.</p>
+                <div class="footer-made-with">
+                    Built with <a href="https://github.com/altlimit/sitegen" target="_blank">SiteGen</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

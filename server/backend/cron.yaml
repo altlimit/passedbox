@@ -1,0 +1,16 @@
+cron:
+  - description: "Pending payments check"
+    url: /task/pending-payments
+    schedule: every 12 hours
+
+  - description: "Release expired vaults"
+    url: /task/check-dead-man-switches
+    schedule: every 12 hours
+
+  - description: "Send reminders"
+    url: /task/send-keep-alive-reminders
+    schedule: every 12 hours
+
+  - description: "Recalculate stats"
+    url: /task/recalculate-stats
+    schedule: every 24 hours
