@@ -253,7 +253,7 @@ func (v *VaultAPI) ListVaults(ctx context.Context, r *http.Request) (any, error)
 	}
 	cursor := r.URL.Query().Get("cursor")
 
-	q := dsorm.NewQuery("Vault").Order("-modified").Limit(limit)
+	q := dsorm.NewQuery("Vault").Order("-updatedAt").Limit(limit)
 	if cursor != "" {
 		q = q.Start(cursor)
 	}
