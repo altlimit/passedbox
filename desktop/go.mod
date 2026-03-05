@@ -3,7 +3,7 @@ module passedbox
 go 1.25.3
 
 require (
-	github.com/altlimit/dsorm v0.0.0-20260228232938-30b8b5d2cdee
+	github.com/altlimit/dsorm v0.0.0-20260304195048-c8f036b23007
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/vault v1.21.3
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.72

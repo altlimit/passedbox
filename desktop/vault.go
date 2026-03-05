@@ -218,7 +218,7 @@ func (vm *VaultManager) loadFile(vaultName, fileID string) (*FileMetadata, error
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	fm := &FileMetadata{ID: fileID}
 	if err := db.Get(ctx, fm); err != nil {
 		return nil, errors.New("file not found in metadata")
@@ -514,7 +514,7 @@ func (vm *VaultManager) ImportFile(vaultName, parentID, sourcePath string) (stri
 		IsDeleted: false,
 		IsFolder:  false,
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	if err := db.Put(ctx, fm); err != nil {
 		return "", err
 	}
@@ -664,7 +664,7 @@ func (vm *VaultManager) UpdateFileContent(vaultName string, fileID string, conte
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	contentBytes := []byte(content)
 	encryptedContent, err := Encrypt(contentBytes, masterKey)
 	if err != nil {
@@ -680,10 +680,6 @@ func (vm *VaultManager) UpdateFileContent(vaultName string, fileID string, conte
 	if err != nil {
 		return err
 	}
-	if err := meta.Decrypt(masterKey); err != nil {
-		return err
-	}
-
 	vaultPath := vaultName + VaultExtension
 
 	// Handle copy-on-write logic
@@ -759,10 +755,6 @@ func (vm *VaultManager) UpdateFileContent(vaultName string, fileID string, conte
 
 	// Update size and save
 	meta.Size = int64(len(contentBytes))
-	if err := meta.Encrypt(masterKey); err != nil {
-		return err
-	}
-
 	return db.Put(ctx, meta)
 }
 
@@ -777,7 +769,7 @@ func (vm *VaultManager) ListFiles(vaultName, parentID string) ([]*FileMetadata, 
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	q := dsorm.NewQuery("FileMetadata").FilterField("parentId", "=", parentID).FilterField("isDeleted", "=", false)
 	files, _, err := dsorm.Query[*FileMetadata](ctx, db, q, "")
 	if err != nil {
@@ -811,7 +803,7 @@ func (vm *VaultManager) GetVaultInfo(vaultName string) (VaultInfo, error) {
 	info.DMSEnabled = vmeta.DMSEnabled
 	info.DMSServerURL = vmeta.DMSServerURL
 
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	q := dsorm.NewQuery("FileMetadata").FilterField("isDeleted", "=", false)
 	files, _, err := dsorm.Query[*FileMetadata](ctx, db, q, "")
 	if err != nil {
@@ -904,7 +896,7 @@ func (vm *VaultManager) ExportFiles(vaultName, destDir string, fileIDs []string)
 	totalToExport, _ := vm.countItems(db, fileIDs, masterKey)
 	current := 0
 	vm.isCancelled.Store(false) // Reset cancel state
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	var exportItem func(db *dsorm.Client, fID, currentDestPath string) error
 	exportItem = func(db *dsorm.Client, fID, currentDestPath string) error {
 		if err := vm.checkCancel(); err != nil {
@@ -994,7 +986,7 @@ func (vm *VaultManager) CopyFiles(vaultName, targetParentID string, sourceIDs []
 
 // copyItem recursively copies a file or folder using copy-on-write pointers.
 func (vm *VaultManager) copyItem(db *dsorm.Client, srcID, targetParentID string, masterKey []byte) error {
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	meta := &FileMetadata{ID: srcID}
 	if err := db.Get(ctx, meta); err != nil {
 		return errors.New("source item not found")
@@ -1055,7 +1047,7 @@ func (vm *VaultManager) copyItem(db *dsorm.Client, srcID, targetParentID string,
 
 // copyItemInternal is like copyItem but does not append " (Copy)" to the name.
 func (vm *VaultManager) copyItemInternal(db *dsorm.Client, srcID, targetParentID string, masterKey []byte) error {
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	meta := &FileMetadata{ID: srcID}
 	if err := db.Get(ctx, meta); err != nil {
 		return err
@@ -1133,7 +1125,8 @@ func (vm *VaultManager) newFolder(db *dsorm.Client, parentID string, folderName 
 		CreatedAt: time.Now(),
 		IsFolder:  true,
 	}
-	return meta.ID, db.Put(context.WithValue(vm.ctx, "masterKey", masterKey), meta)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
+	return meta.ID, db.Put(ctx, meta)
 }
 
 // MoveFile updates a file or folder's parent ID (moves it to a different folder).
@@ -1142,7 +1135,7 @@ func (vm *VaultManager) MoveFile(vaultName, fileID, newParentID string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	db, err := vm.getDB(vaultName)
 	if err != nil {
 		return err
@@ -1168,7 +1161,7 @@ func (vm *VaultManager) RenameFile(vaultName, fileID, newName string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	db, err := vm.getDB(vaultName)
 	if err != nil {
 		return err
@@ -1188,7 +1181,7 @@ func (vm *VaultManager) DeleteFile(vaultName, fileID string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	db, err := vm.getDB(vaultName)
 	if err != nil {
 		return err
@@ -1298,8 +1291,8 @@ func (vm *VaultManager) CopyAcrossVaults(sourceVault, targetVault, targetParentI
 	totalToCopy, _ := vm.countItems(srcDB, sourceIDs, sourceKey)
 	current := 0
 	vm.isCancelled.Store(false)
-	srcCtx := context.WithValue(vm.ctx, "masterKey", sourceKey)
-	tgtCtx := context.WithValue(vm.ctx, "masterKey", targetKey)
+	srcCtx := dsorm.WithEncryptionKeyContext(vm.ctx, sourceKey)
+	tgtCtx := dsorm.WithEncryptionKeyContext(vm.ctx, targetKey)
 
 	var copyCrossItem func(srcDB, tgtDB *dsorm.Client, srcID, tgtParent string) error
 	copyCrossItem = func(srcDB, tgtDB *dsorm.Client, srcID, tgtParent string) error {
@@ -1401,7 +1394,7 @@ func (vm *VaultManager) MoveAcrossVaults(sourceVault, targetVault, targetParentI
 // countItems calculates the total number of items recursively given a list of IDs.
 func (vm *VaultManager) countItems(db *dsorm.Client, ids []string, key []byte) (int, error) {
 	total := 0
-	ctx := context.WithValue(vm.ctx, "masterKey", key)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, key)
 	for _, id := range ids {
 		total++
 		meta := &FileMetadata{ID: id}
@@ -1424,7 +1417,7 @@ func (vm *VaultManager) countItems(db *dsorm.Client, ids []string, key []byte) (
 
 // collectDescendants recursively collects all child IDs of a folder.
 func (vm *VaultManager) collectDescendants(db *dsorm.Client, parentID string, ids *[]string, masterKey []byte) error {
-	ctx := context.WithValue(vm.ctx, "masterKey", masterKey)
+	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	q := dsorm.NewQuery("FileMetadata").FilterField("parentId", "=", parentID)
 	files, _, _ := dsorm.Query[*FileMetadata](ctx, db, q, "")
 
