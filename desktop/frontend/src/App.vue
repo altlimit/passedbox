@@ -77,6 +77,12 @@ const showFileModal = ref(false)
 const newFileName = ref('')
 const fileNameInput = ref<HTMLInputElement | null>(null)
 
+// Rename Modal State
+const showRenameModal = ref(false)
+const renameValue = ref('')
+const renameFileId = ref('')
+const renameInputRef = ref<HTMLInputElement | null>(null)
+
 // Confirm Modal State
 const showConfirmModal = ref(false)
 const confirmMessage = ref('')
@@ -501,12 +507,39 @@ const handleRenameSelection = async (fileId?: string) => {
   const file = files?.find((f: any) => f.raw.id === id)
   const oldName = file?.name || ''
   
-  const newName = window.prompt('Enter new name:', oldName)
-  if (newName === null || newName.trim() === '' || newName.trim() === oldName) return
+  renameFileId.value = id
+  renameValue.value = oldName
+  showRenameModal.value = true
+  nextTick(() => {
+    if (renameInputRef.value) {
+      renameInputRef.value.focus()
+      const dotIndex = oldName.lastIndexOf('.')
+      if (dotIndex > 0) {
+        renameInputRef.value.setSelectionRange(0, dotIndex)
+      } else {
+        renameInputRef.value.select()
+      }
+    }
+  })
+}
+
+const confirmRename = async () => {
+  const id = renameFileId.value
+  const newName = renameValue.value.trim()
+  if (!id || !newName) return
+
+  // Find old name to skip no-op
+  const files = vaultViewRef.value?.files
+  const file = files?.find((f: any) => f.raw.id === id)
+  if (file && newName === file.name) {
+    showRenameModal.value = false
+    return
+  }
 
   try {
-    await RenameFile(currentVaultName.value, id, newName.trim())
+    await RenameFile(currentVaultName.value, id, newName)
     addToast('Renamed successfully', 'success')
+    showRenameModal.value = false
     vaultViewRef.value?.fetchFiles()
   } catch (e) {
     addToast(formatError(e) || 'Failed to rename', 'error')
@@ -898,6 +931,27 @@ const handleSearchResultClick = (result: any) => {
         <div class="actions">
            <button @click="showFileModal = false" class="btn-ghost">Cancel</button>
            <button @click="confirmCreateFile" class="btn-primary" :disabled="!newFileName.trim()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div v-if="showRenameModal" class="modal-overlay" @click.self="showRenameModal = false">
+      <div class="modal">
+        <h2>Rename</h2>
+        <div class="form-group mt-4">
+          <label>New Name</label>
+          <input 
+            ref="renameInputRef"
+            v-model="renameValue" 
+            placeholder="Enter new name" 
+            @keyup.enter="confirmRename"
+            @keydown.esc="showRenameModal = false"
+          />
+        </div>
+        <div class="actions">
+           <button @click="showRenameModal = false" class="btn-ghost">Cancel</button>
+           <button @click="confirmRename" class="btn-primary" :disabled="!renameValue.trim()">Rename</button>
         </div>
       </div>
     </div>

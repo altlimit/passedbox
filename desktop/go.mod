@@ -3,6 +3,7 @@ module passedbox
 go 1.25.3
 
 require (
+	cloud.google.com/go/datastore v1.21.0
 	github.com/altlimit/dsorm v0.0.0-20260304195048-c8f036b23007
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/vault v1.21.3
@@ -15,7 +16,6 @@ require (
 	cloud.google.com/go/auth v0.18.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
-	cloud.google.com/go/datastore v1.21.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect

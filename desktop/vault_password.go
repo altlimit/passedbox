@@ -12,15 +12,15 @@ func (vm *VaultManager) ChangeVaultPassword(vaultName, oldPassword, newPassword 
 		return err
 	}
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
-	share1 := vmeta.Share1
-	encryptedShare2 := vmeta.Share2Enc
-	salt := vmeta.Salt
-	usePepperDoc := vmeta.UsePepper
+	share1 := vmeta.Secret.Share1
+	encryptedShare2 := vmeta.Secret.Share2Enc
+	salt := vmeta.Secret.Salt
+	usePepperDoc := vstate.UsePepper
 
 	// Decrypt Share 2 (and Share 1 if peppered) with old password
 	finalOldPassword := oldPassword
@@ -93,11 +93,14 @@ func (vm *VaultManager) ChangeVaultPassword(vaultName, oldPassword, newPassword 
 	}
 
 	// 3. Update database
-	vmeta.Share1 = share1Final
-	vmeta.Share2Enc = newEncryptedShare2
-	vmeta.Salt = newSalt
-	vmeta.UsePepper = useDevicePepper
-	return db.Put(vm.ctx, vmeta)
+	vmeta.Secret.Share1 = share1Final
+	vmeta.Secret.Share2Enc = newEncryptedShare2
+	vmeta.Secret.Salt = newSalt
+	vstate.UsePepper = useDevicePepper
+	if err := db.Put(vm.ctx, vstate); err != nil {
+		return fmt.Errorf("failed to update vault state: %w", err)
+	}
+	return vmeta.Update(vm.ctx, db)
 }
 
 // SetNewPassword sets a new password on a recovered vault that has no password.
@@ -113,12 +116,12 @@ func (vm *VaultManager) SetNewPassword(vaultName, newPassword string, useDeviceP
 		return err
 	}
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
-	if !vmeta.RecoveredNoPassword {
+	if !vmeta.Recovered {
 		return errors.New("vault is not in recovered state — use ChangeVaultPassword instead")
 	}
 
@@ -171,14 +174,17 @@ func (vm *VaultManager) SetNewPassword(vaultName, newPassword string, useDeviceP
 	}
 
 	// Update metadata — disable DMS since shares are re-split
-	vmeta.Share1 = share1Final
-	vmeta.Share2Enc = newEncShare2
-	vmeta.Salt = newSalt
-	vmeta.UsePepper = useDevicePepper
-	vmeta.RecoveredNoPassword = false
-	vmeta.DMSEnabled = false
-	vmeta.DMSServerURL = ""
-	vmeta.DMSToken = ""
-	vmeta.Share3Key = nil
-	return db.Put(vm.ctx, vmeta)
+	vmeta.Secret.Share1 = share1Final
+	vmeta.Secret.Share2Enc = newEncShare2
+	vmeta.Secret.Salt = newSalt
+	vmeta.Recovered = false
+	vmeta.DMS.Enabled = false
+	vmeta.DMS.ServerURL = ""
+	vmeta.DMS.Token = ""
+	vmeta.Secret.Share3Key = nil
+	vstate.UsePepper = useDevicePepper
+	if err := db.Put(vm.ctx, vstate); err != nil {
+		return fmt.Errorf("failed to update vault state: %w", err)
+	}
+	return vmeta.Update(vm.ctx, db)
 }

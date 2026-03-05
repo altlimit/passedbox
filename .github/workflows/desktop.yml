@@ -64,6 +64,10 @@ jobs:
       - name: Install Wails 3 CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
+      - name: Run Tests
+        working-directory: ./desktop
+        run: go test ./...
+
       - name: Build Application
         working-directory: ./desktop
         run: wails3 build EXTRA_LDFLAGS="-X main.AppVersion=${{ steps.version.outputs.tag }}"

@@ -170,7 +170,6 @@ const handlePasswordChange = async () => {
     oldPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
-    useDevicePepper.value = false
   } catch (err) {
     addToast(formatError(err), 'error')
   } finally {

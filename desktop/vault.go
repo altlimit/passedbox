@@ -31,21 +31,6 @@ type Vault struct {
 	Path string `json:"path"`
 }
 
-type VaultMeta struct {
-	ID                  string `json:"id,omitempty" datastore:"-" model:"id"`
-	VaultID             string `json:"vaultId,omitempty" datastore:"vaultId"`
-	Share1              []byte `json:"share1,omitempty" model:"share1,marshal"`
-	Share2Enc           []byte `json:"share2Enc,omitempty" model:"share2Enc,marshal"`
-	Salt                []byte `json:"salt,omitempty" model:"salt,marshal"`
-	UsePepper           bool   `json:"usePepper,omitempty" datastore:"usePepper"`
-	Type                string `json:"type,omitempty" datastore:"type"`
-	DMSEnabled          bool   `json:"dmsEnabled,omitempty" datastore:"dmsEnabled"`
-	DMSServerURL        string `json:"dmsServerUrl,omitempty" datastore:"dmsServerUrl"`
-	DMSToken            string `json:"dmsToken,omitempty" datastore:"dmsToken"`
-	Share3Key           []byte `json:"share3Key,omitempty" model:"share3Key,marshal"`                 // Key to decrypt share3 from server for recovery
-	RecoveredNoPassword bool   `json:"recoveredNoPassword,omitempty" datastore:"recoveredNoPassword"` // True when vault was recovered via DMS without password
-}
-
 // VaultManager manages vault operations.
 type VaultManager struct {
 	MasterKeys  map[string][]byte
@@ -311,18 +296,6 @@ func buildPath(allFiles map[string]*FileMetadata, parentID string) (string, []Pa
 	return strings.Join(parts, " › "), nodes
 }
 
-func (vm *VaultManager) vaultMetadata(vaultName string) (*VaultMeta, error) {
-	db, err := vm.getDB(vaultName)
-	if err != nil {
-		return nil, err
-	}
-	vmeta := &VaultMeta{ID: "main"}
-	if err := db.Get(vm.ctx, vmeta); err != nil {
-		return nil, err
-	}
-	return vmeta, nil
-}
-
 // ListVaults scans the current directory for folders ending with .vault
 func (vm *VaultManager) ListVaults() ([]Vault, error) {
 	var vaults []Vault
@@ -336,12 +309,12 @@ func (vm *VaultManager) ListVaults() ([]Vault, error) {
 			vaultName := strings.TrimSuffix(entry.Name(), VaultExtension)
 			vaultPath := entry.Name()
 
-			meta, err := vm.vaultMetadata(vaultName)
+			meta, _, err := vm.vaultMetadata(vaultName)
 			if err != nil {
 				continue
 			}
 			vaults = append(vaults, Vault{
-				ID:   meta.ID,
+				ID:   meta.VaultID,
 				Name: vaultName,
 				Path: vaultPath,
 			})
@@ -400,28 +373,36 @@ func (vm *VaultManager) CreateVault(vaultName, password string, useDevicePepper 
 		return err
 	}
 	// Store metadata
-	vmeta := &VaultMeta{
-		ID:        "main",
-		VaultID:   vaultID,
-		Share1:    share1Final,
-		Share2Enc: encryptedShare2,
-		Salt:      salt,
-		UsePepper: useDevicePepper,
-		Type:      KeyGlobal,
+	vmeta := &VaultMetadata{
+		ID:      "main",
+		VaultID: vaultID,
+		Secret: Secret{
+			Share1:    share1Final,
+			Share2Enc: encryptedShare2,
+			Salt:      salt,
+		},
 	}
-	return db.Put(vm.ctx, vmeta)
+	vstate, err := vmeta.GetState(vm.ctx, db)
+	if err != nil {
+		return err
+	}
+	vstate.UsePepper = useDevicePepper
+	if err := db.Put(vm.ctx, vstate); err != nil {
+		return err
+	}
+	return vmeta.Update(vm.ctx, db)
 }
 
 // UnlockVault attempts to unlock a vault with the provided password.
 func (vm *VaultManager) UnlockVault(vaultName, password string) error {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
-	share1 := vmeta.Share1
-	encryptedShare2 := vmeta.Share2Enc
-	salt := vmeta.Salt
-	usePepper := vmeta.UsePepper
+	share1 := vmeta.Secret.Share1
+	encryptedShare2 := vmeta.Secret.Share2Enc
+	salt := vmeta.Secret.Salt
+	usePepper := vstate.UsePepper
 
 	if share1 == nil || encryptedShare2 == nil || salt == nil {
 		return errors.New("corrupt vault: missing keys")
@@ -473,7 +454,8 @@ func (vm *VaultManager) ImportFile(vaultName, parentID, sourcePath string) (stri
 	var err error
 	var content []byte
 	var encryptedContent []byte
-	if sourcePath != "" {
+	name := filepath.Base(sourcePath)
+	if sourcePath != "" && name != sourcePath {
 		var fileInfo os.FileInfo
 		fileInfo, err = os.Stat(sourcePath)
 		if err != nil {
@@ -508,7 +490,7 @@ func (vm *VaultManager) ImportFile(vaultName, parentID, sourcePath string) (stri
 	}
 	fm := &FileMetadata{
 		ID:        uuid.New().String(),
-		Name:      filepath.Base(sourcePath),
+		Name:      name,
 		Size:      size,
 		ParentID:  parentID,
 		IsDeleted: false,
@@ -645,7 +627,7 @@ func (vm *VaultManager) ImportPaths(vaultName, parentID string, sourcePaths []st
 
 // CreateFile creates a new empty file in the vault and returns its ID.
 func (vm *VaultManager) CreateFile(vaultName, parentID, name string) (string, error) {
-	return vm.ImportFile(vaultName, parentID, "")
+	return vm.ImportFile(vaultName, parentID, name)
 }
 
 func (vm *VaultManager) masterKey(vaultName string) ([]byte, error) {
@@ -793,15 +775,15 @@ func (vm *VaultManager) GetVaultInfo(vaultName string) (VaultInfo, error) {
 
 	var info VaultInfo
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return VaultInfo{}, err
 	}
 
 	info.VaultID = vmeta.VaultID
-	info.UsePepper = vmeta.UsePepper
-	info.DMSEnabled = vmeta.DMSEnabled
-	info.DMSServerURL = vmeta.DMSServerURL
+	info.UsePepper = vstate.UsePepper
+	info.DMSEnabled = vmeta.DMS.Enabled
+	info.DMSServerURL = vmeta.DMS.ServerURL
 
 	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 	q := dsorm.NewQuery("FileMetadata").FilterField("isDeleted", "=", false)

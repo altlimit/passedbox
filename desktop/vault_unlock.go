@@ -12,22 +12,22 @@ import (
 // UnlockVaultWithShare3 recovers a vault using share1 (local) + share3 (from server)
 // when the Dead Man's Switch has been released. No password needed.
 func (vm *VaultManager) UnlockVaultWithShare3(vaultName string) error {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return errors.New("Dead Man's Switch is not enabled")
 	}
 
-	if len(vmeta.Share3Key) == 0 {
+	if len(vmeta.Secret.Share3Key) == 0 {
 		return errors.New("share3 recovery key not available — vault must be re-enabled for DMS to support recovery")
 	}
 
 	// Fetch encrypted share3 from server
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
-	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/share", nil, vmeta.DMSToken)
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
+	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/share", nil, vmeta.DMS.Token)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -50,19 +50,19 @@ func (vm *VaultManager) UnlockVaultWithShare3(vaultName string) error {
 	}
 
 	// Decrypt share3 using the locally stored share3Key
-	share3, err := Decrypt(result.Share3Enc, vmeta.Share3Key)
+	share3, err := Decrypt(result.Share3Enc, vmeta.Secret.Share3Key)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt share3: %w", err)
 	}
 
 	// Get share1 (may need pepper decryption)
-	share1 := vmeta.Share1
-	if vmeta.UsePepper {
+	share1 := vmeta.Secret.Share1
+	if vstate.UsePepper {
 		info := getDevicePepperInfoOS()
 		if !info.Available {
 			return errors.New("device pepper not available")
 		}
-		pepperKey := DeriveKey([]byte(info.SerialID), vmeta.Salt)
+		pepperKey := DeriveKey([]byte(info.SerialID), vmeta.Secret.Salt)
 		decShare1, err := Decrypt(share1, pepperKey)
 		if err != nil {
 			return errors.New("failed to decrypt share1 with device pepper")
@@ -81,8 +81,8 @@ func (vm *VaultManager) UnlockVaultWithShare3(vaultName string) error {
 	// Mark vault as recovered without password
 	db, dbErr := vm.getDB(vaultName)
 	if dbErr == nil {
-		vmeta.RecoveredNoPassword = true
-		if err := db.Put(vm.ctx, vmeta); err != nil {
+		vmeta.Recovered = true
+		if err := vmeta.Update(vm.ctx, db); err != nil {
 			return fmt.Errorf("failed to update vault metadata: %w", err)
 		}
 	}

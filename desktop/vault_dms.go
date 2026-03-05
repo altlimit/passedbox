@@ -41,18 +41,18 @@ func (vm *VaultManager) DisableDeadManSwitch(vaultName string) error {
 		return err
 	}
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return errors.New("Dead Man's Switch is not enabled")
 	}
 
 	// Call deactivate endpoint (server decides delete vs inactive)
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
-	req, err := dmsAuthRequest("POST", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/deactivate", nil, vmeta.DMSToken)
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
+	req, err := dmsAuthRequest("POST", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/deactivate", nil, vmeta.DMS.Token)
 	if err != nil {
 		return err
 	}
@@ -74,12 +74,12 @@ func (vm *VaultManager) DisableDeadManSwitch(vaultName string) error {
 
 	// Update local metadata
 	clearToken := action == "deleted"
-	vmeta.DMSEnabled = false
-	vmeta.DMSServerURL = ""
+	vmeta.DMS.Enabled = false
+	vmeta.DMS.ServerURL = ""
 	if clearToken {
-		vmeta.DMSToken = ""
+		vmeta.DMS.Token = ""
 	}
-	return db.Put(vm.ctx, vmeta)
+	return vmeta.Update(vm.ctx, db)
 }
 
 // ResetDeadManSwitch force-clears all local DMS metadata regardless of server state.
@@ -90,42 +90,42 @@ func (vm *VaultManager) ResetDeadManSwitch(vaultName string, resetVaultID bool) 
 		return err
 	}
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
 	// Clear DMS fields
-	vmeta.DMSEnabled = false
-	vmeta.DMSServerURL = ""
-	vmeta.DMSToken = ""
-	vmeta.Share3Key = nil
+	vmeta.DMS.Enabled = false
+	vmeta.DMS.ServerURL = ""
+	vmeta.DMS.Token = ""
+	vmeta.Secret.Share3Key = nil
 
 	if resetVaultID {
 		vmeta.VaultID = uuid.New().String()
 	}
 
-	return db.Put(vm.ctx, vmeta)
+	return vmeta.Update(vm.ctx, db)
 }
 
 // UpdateDeadManSwitchSettings updates DMS settings on the server.
 func (vm *VaultManager) UpdateDeadManSwitchSettings(vaultName string, settings DMSSettings) error {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return errors.New("Dead Man's Switch is not enabled")
 	}
 
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
 	payloadBytes, err := json.Marshal(settings)
 	if err != nil {
 		return err
 	}
 
-	req, err := dmsAuthRequest("PUT", serverURL+"/api/v1/vaults/"+vmeta.VaultID, bytes.NewReader(payloadBytes), vmeta.DMSToken)
+	req, err := dmsAuthRequest("PUT", serverURL+"/api/v1/vaults/"+vmeta.VaultID, bytes.NewReader(payloadBytes), vmeta.DMS.Token)
 	if err != nil {
 		return err
 	}
@@ -146,18 +146,18 @@ func (vm *VaultManager) UpdateDeadManSwitchSettings(vaultName string, settings D
 
 // BuyCredits creates a Stripe checkout session on the server and returns the checkout URL.
 func (vm *VaultManager) BuyCredits(vaultName string, years int) (string, error) {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return "", err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return "", errors.New("Dead Man's Switch is not enabled")
 	}
 
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
 	body, _ := json.Marshal(map[string]int{"years": years})
-	req, err := dmsAuthRequest("POST", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/buy", bytes.NewReader(body), vmeta.DMSToken)
+	req, err := dmsAuthRequest("POST", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/buy", bytes.NewReader(body), vmeta.DMS.Token)
 	if err != nil {
 		return "", err
 	}
@@ -188,17 +188,17 @@ func (vm *VaultManager) BuyCredits(vaultName string, years int) (string, error) 
 
 // GetShare3ForRecovery fetches the released share3 from the server for vault recovery.
 func (vm *VaultManager) GetShare3ForRecovery(vaultName string) (string, error) {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return "", err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return "", errors.New("Dead Man's Switch is not enabled")
 	}
 
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
-	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/share", nil, vmeta.DMSToken)
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
+	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID+"/share", nil, vmeta.DMS.Token)
 	if err != nil {
 		return "", err
 	}
@@ -225,26 +225,26 @@ func (vm *VaultManager) GetShare3ForRecovery(vaultName string) (string, error) {
 
 // IsRecoveredVault returns true if the vault was recovered via DMS without a password.
 func (vm *VaultManager) IsRecoveredVault(vaultName string) (bool, error) {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return false, err
 	}
-	return vmeta.RecoveredNoPassword, nil
+	return vmeta.Recovered, nil
 }
 
 // GetDeadManSwitchStatus fetches the current DMS status from the server.
 func (vm *VaultManager) GetDeadManSwitchStatus(vaultName string) (DMSStatus, error) {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return DMSStatus{}, err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return DMSStatus{Enabled: false}, nil
 	}
 
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
-	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID, nil, vmeta.DMSToken)
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
+	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID, nil, vmeta.DMS.Token)
 	if err != nil {
 		return DMSStatus{}, err
 	}
@@ -281,8 +281,8 @@ func (vm *VaultManager) GetDeadManSwitchStatus(vaultName string) (DMSStatus, err
 
 	status := DMSStatus{
 		Enabled:        true,
-		ServerURL:      vmeta.DMSServerURL,
-		Token:          vmeta.DMSToken,
+		ServerURL:      vmeta.DMS.ServerURL,
+		Token:          vmeta.DMS.Token,
 		CalendarURL:    serverURL + "/api/v1/vaults/" + vmeta.VaultID + "/calendar.ics",
 		PaymentEnabled: paymentEnabled,
 	}
@@ -334,12 +334,12 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 		return DMSStatus{}, err
 	}
 
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, vstate, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return DMSStatus{}, err
 	}
 
-	if vmeta.DMSEnabled {
+	if vmeta.DMS.Enabled {
 		return DMSStatus{}, errors.New("Dead Man's Switch is already enabled")
 	}
 
@@ -347,15 +347,15 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 	// Use the same logic as UnlockVault: derive a key from password+salt
 	// and attempt to decrypt the existing Share2Enc.
 	verifyPassword := password
-	if vmeta.UsePepper {
+	if vstate.UsePepper {
 		info := getDevicePepperInfoOS()
 		if !info.Available {
 			return DMSStatus{}, errors.New("invalid device")
 		}
 		verifyPassword = password + info.SerialID
 	}
-	verifyKey := DeriveKey([]byte(verifyPassword), vmeta.Salt)
-	if _, err := Decrypt(vmeta.Share2Enc, verifyKey); err != nil {
+	verifyKey := DeriveKey([]byte(verifyPassword), vmeta.Secret.Salt)
+	if _, err := Decrypt(vmeta.Secret.Share2Enc, verifyKey); err != nil {
 		return DMSStatus{}, errors.New("incorrect vault password")
 	}
 
@@ -382,7 +382,7 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 	serverURL = strings.TrimRight(serverURL, "/")
 	regPayload := map[string]any{
 		"id":              vmeta.VaultID,
-		"token":           vmeta.DMSToken,
+		"token":           vmeta.DMS.Token,
 		"share3Enc":       encryptedShare3,
 		"releaseOnExpiry": false,
 		"enableKeepAlive": false,
@@ -422,7 +422,7 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 	// This ensures the vault can still be unlocked with the same password after DMS is enabled.
 	finalPassword := password
 	share1Final := shares[0]
-	if vmeta.UsePepper {
+	if vstate.UsePepper {
 		info := getDevicePepperInfoOS()
 		if info.Available {
 			finalPassword = password + info.SerialID
@@ -457,14 +457,15 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 	}
 
 	// Update metadata
-	vmeta.Share1 = share1Final
-	vmeta.Share2Enc = encryptedShare2
-	vmeta.Salt = newSalt
-	vmeta.DMSEnabled = true
-	vmeta.DMSServerURL = serverURL
-	vmeta.DMSToken = regResult.Token
-	vmeta.Share3Key = share3Key
-	if err := db.Put(vm.ctx, vmeta); err != nil {
+	vmeta.Secret.Share1 = share1Final
+	vmeta.Secret.Share2Enc = encryptedShare2
+	vmeta.Secret.Salt = newSalt
+	vmeta.DMS.Enabled = true
+	vmeta.DMS.ServerURL = serverURL
+	vmeta.DMS.Token = regResult.Token
+	vmeta.Secret.Share3Key = share3Key
+
+	if err := vmeta.Update(vm.ctx, db); err != nil {
 		return DMSStatus{}, fmt.Errorf("failed to update vault metadata: %w", err)
 	}
 
@@ -481,17 +482,17 @@ func (vm *VaultManager) EnableDeadManSwitch(vaultName, serverURL, password strin
 // CheckDMSRelease checks with the server whether this vault has been released.
 // Returns the DMSStatus with release information.
 func (vm *VaultManager) CheckDMSRelease(vaultName string) (DMSStatus, error) {
-	vmeta, err := vm.vaultMetadata(vaultName)
+	vmeta, _, err := vm.vaultMetadata(vaultName)
 	if err != nil {
 		return DMSStatus{}, err
 	}
 
-	if !vmeta.DMSEnabled {
+	if !vmeta.DMS.Enabled {
 		return DMSStatus{Enabled: false}, nil
 	}
 
-	serverURL := strings.TrimRight(vmeta.DMSServerURL, "/")
-	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID, nil, vmeta.DMSToken)
+	serverURL := strings.TrimRight(vmeta.DMS.ServerURL, "/")
+	req, err := dmsAuthRequest("GET", serverURL+"/api/v1/vaults/"+vmeta.VaultID, nil, vmeta.DMS.Token)
 	if err != nil {
 		return DMSStatus{Enabled: true}, nil // Server unreachable, still report DMS enabled
 	}
@@ -513,8 +514,8 @@ func (vm *VaultManager) CheckDMSRelease(vaultName string) (DMSStatus, error) {
 
 	status := DMSStatus{
 		Enabled:   true,
-		ServerURL: vmeta.DMSServerURL,
-		Token:     vmeta.DMSToken,
+		ServerURL: vmeta.DMS.ServerURL,
+		Token:     vmeta.DMS.Token,
 	}
 	if v, ok := serverStatus["released"].(bool); ok {
 		status.Released = v
