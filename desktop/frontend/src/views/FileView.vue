@@ -2,7 +2,7 @@
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor';
 import { Dialogs } from '@wailsio/runtime';
 import { ArrowLeft, Download, Loader2, Music, Pencil, Save, X } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ExportFile, GetFile, GetFileMetadata, UpdateFileContent } from '../../bindings/passedbox/vaultmanager';
 import { useToast } from '../composables/useToast';
@@ -25,6 +25,11 @@ const forceTextMode = ref(false)
 const isEditing = ref(false)
 const editContent = ref('')
 const isSaving = ref(false)
+const monacoEditorRef = ref<any>(null)
+
+const handleEditorMount = (editor: any) => {
+    monacoEditorRef.value = editor
+}
 
 watch(() => route.params.id, (newId, oldId) => {
     if (newId && newId !== oldId) {
@@ -40,6 +45,9 @@ watch(() => route.params.id, (newId, oldId) => {
 const startEditing = () => {
     editContent.value = textContent.value
     isEditing.value = true
+    nextTick(() => {
+        monacoEditorRef.value?.focus()
+    })
 }
 
 const saveContent = async () => {
@@ -62,12 +70,19 @@ const handleKeydown = (e: KeyboardEvent) => {
     if (document.querySelector('.modal-overlay')) return
     
     if (isEditing.value) {
+        // While editing, block ALL shortcuts from propagating to parent handlers
+        // Only allow Ctrl+S (save) and Escape (cancel edit)
         if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault()
+            e.stopPropagation()
             saveContent()
         } else if (e.key === 'Escape') {
             e.preventDefault()
+            e.stopPropagation()
             isEditing.value = false
+        } else {
+            // Block all other shortcuts from reaching parent handlers
+            e.stopPropagation()
         }
     } else {
         if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
@@ -333,6 +348,7 @@ onUnmounted(() => {
                             wordWrap: 'on',
                             readOnly: !isEditing
                         }"
+                        @mount="handleEditorMount"
                     />
                 </div>
             </div>

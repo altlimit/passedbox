@@ -36,6 +36,13 @@ func TestVaultFullLifecycle(t *testing.T) {
 		}
 	})
 
+	// 1b. Test Duplicate Creation
+	t.Run("CreateVaultDuplicate", func(t *testing.T) {
+		if err := vm.CreateVault(vaultName, password, false); err == nil {
+			t.Fatal("Expected error when creating duplicate vault, got nil")
+		}
+	})
+
 	// 2. Test Unlock
 	t.Run("UnlockVault", func(t *testing.T) {
 		if err := vm.UnlockVault(vaultName, password); err != nil {

@@ -254,6 +254,15 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
       }
   }
 
+  // When viewing/editing a file, only allow lock vault shortcut
+  if (route.name === 'FileView') {
+      if (isModKey(e) && (e.key === 'l' || e.key === 'L')) {
+          e.preventDefault()
+          handleVaultLock()
+      }
+      return
+  }
+
   // Lock Vault shortcut
   if (isModKey(e) && (e.key === 'l' || e.key === 'L')) {
       e.preventDefault()
@@ -289,7 +298,7 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
       return
   }
 
-  if ((isModKey(e) && (e.key === 'f' || e.key === 'F')) || e.key === '/') {
+  if (isModKey(e) && (e.key === 'f' || e.key === 'F')) {
     // Only expand search if in an unlocked vault
     if (unlockedVaults.value.includes(currentVaultName.value)) {
       e.preventDefault()

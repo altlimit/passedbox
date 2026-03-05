@@ -231,11 +231,11 @@ func (vm *VaultManager) SearchFiles(searchTerm string) ([]SearchResult, error) {
 	var results []SearchResult
 
 	for _, vault := range vaults {
-		_, ok := vm.MasterKeys[vault.Name]
+		masterKey, ok := vm.MasterKeys[vault.Name]
 		if !ok {
 			continue
 		}
-
+		ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
 		db, err := vm.getDB(vault.Name)
 		if err != nil {
 			continue
@@ -245,17 +245,13 @@ func (vm *VaultManager) SearchFiles(searchTerm string) ([]SearchResult, error) {
 		allFiles := make(map[string]*FileMetadata)
 
 		q := dsorm.NewQuery("Filemetadata").FilterField("isDeleted", "=", false)
-		files, _, err := dsorm.Query[*FileMetadata](vm.ctx, db, q, "")
+		files, _, err := dsorm.Query[*FileMetadata](ctx, db, q, "")
 		if err != nil {
 			continue
 		}
 
-		for _, meta := range files {
-			allFiles[meta.ID] = meta
-		}
-
 		// Search and build results
-		for _, meta := range allFiles {
+		for _, meta := range files {
 			if meta.IsDeleted {
 				continue
 			}
@@ -325,6 +321,11 @@ func (vm *VaultManager) ListVaults() ([]Vault, error) {
 
 // CreateVault creates a new vault with the given name and password.
 func (vm *VaultManager) CreateVault(vaultName, password string, useDevicePepper bool) error {
+	// Check if vault already exists
+	if _, err := os.Stat(vaultName + VaultExtension); err == nil {
+		return fmt.Errorf("vault '%s' already exists", vaultName)
+	}
+
 	vaultID := uuid.New().String()
 
 	// Generate Master Key

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { Check, Copy, File, FileText, Folder, Image, Loader2, Lock, Music, Shield, Unlock, Video } from 'lucide-vue-next';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { CheckDMSRelease, CopyAcrossVaults, CopyFiles, ListFiles, MoveAcrossVaults, MoveFile, UnlockVault, UnlockVaultWithShare3 } from '../../bindings/passedbox/vaultmanager';
 import { useClipboard } from '../composables/useClipboard';
 import { useToast } from '../composables/useToast';
 import { copyToClipboard, formatError } from '../utils';
 
 const { addToast } = useToast();
+const route = useRoute();
 const props = defineProps<{
   vaultName: string
   vaultId: string
@@ -417,6 +418,9 @@ const getCols = () => {
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (!props.isUnlocked) return
+
+  // Don't intercept when viewing/editing a file
+  if (route.name === 'FileView') return
   
   // Don't intercept when typing in inputs
   const tag = (e.target as HTMLElement).tagName
