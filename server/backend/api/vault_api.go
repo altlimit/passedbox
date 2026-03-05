@@ -186,11 +186,12 @@ func (v *VaultAPI) RegisterVault(r *http.Request, req struct {
 		vault.LastCheckIn = time.Now()
 
 		// Reset released state if needed
-		if vault.Status == "released" {
+		switch vault.Status {
+		case "released":
 			vault.Released = false
 			vault.ReleasedAt = time.Time{}
 			vault.Status = "pending"
-		} else if vault.Status == "inactive" {
+		case "inactive":
 			vault.Status = "active"
 		}
 		// Keep existing status (active stays active, pending stays pending)
@@ -609,10 +610,14 @@ func (v *VaultAPI) Vaults_0_Push_Test(ctx context.Context) (any, error) {
 		return nil, fmt.Errorf("push notifications not configured")
 	}
 
-	err := v.Push.SendToVault(ctx, id, push.NotifyPayload{
+	config, err := model.Config(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = v.Push.SendToVault(ctx, id, push.NotifyPayload{
 		Title: "PassedBox Keep-Alive",
 		Body:  "This is a test notification. Your push setup is working!",
-		URL:   fmt.Sprintf("/checkin?id=%s&token=%s", id, vault.Token),
+		URL:   fmt.Sprintf("%s/checkin?id=%s&token=%s", config.BaseURL, id, vault.Token),
 		Tag:   "passedbox-test",
 	})
 	if err != nil {

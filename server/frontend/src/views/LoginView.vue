@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { resetAuth } from '../router'
 
 const router = useRouter()
 const password = ref('')
@@ -19,6 +20,7 @@ async function handleLogin() {
     })
     const data = await res.json()
     if (res.ok && data.ok) {
+      resetAuth()
       router.push('/')
     } else {
       error.value = data.error || 'Login failed'

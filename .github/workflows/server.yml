@@ -33,6 +33,7 @@ jobs:
           gcloud_component: 'app-engine-go'
       - name: Deploy services
         run: |
+          echo '  ENCRYPTION_KEY: "${{ secrets.ENC_KEY }}"' >> server/backend/app.yaml
           gcloud app deploy server/backend/cron.yaml -q
           gcloud app deploy server/backend/app.yaml --version=v${GITHUB_RUN_NUMBER} -q
           gcloud app versions list --service="default" --format="value(version.id)" --sort-by="~version.createTime" | tail -n +3 | xargs -r gcloud app versions delete --service="default" --quiet

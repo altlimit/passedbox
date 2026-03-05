@@ -23,7 +23,7 @@ func setupAPI(t *testing.T) (*VaultAPI, *dsorm.Client) {
 	t.Cleanup(func() { os.RemoveAll(dir) }) // best-effort, may fail on Windows due to SQLite lock
 
 	store := local.NewStore(dir)
-	client, err := dsorm.New(context.Background(), dsorm.WithStore(store))
+	client, err := dsorm.New(context.Background(), dsorm.WithStore(store), dsorm.WithEncryptionKey([]byte("test-encryption-key-for-unittest")))
 	if err != nil {
 		t.Fatalf("failed to create dsorm client: %v", err)
 	}

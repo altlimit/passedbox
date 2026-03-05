@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"embed"
+	"encoding/hex"
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/altlimit/dsorm"
@@ -33,6 +37,30 @@ func main() {
 	}
 
 	encKey := os.Getenv("ENCRYPTION_KEY")
+	if encKey == "" {
+		// Determine key file path: DATA_DIR/enc.key or ./enc.key
+		keyDir := dataDir
+		if keyDir == "" {
+			keyDir = "."
+		}
+		keyPath := filepath.Join(keyDir, "enc.key")
+		keyData, err := os.ReadFile(keyPath)
+		if err != nil {
+			raw := make([]byte, 16)
+			if _, err := rand.Read(raw); err != nil {
+				slog.Error("Failed to generate encryption key", "error", err)
+				os.Exit(1)
+			}
+			encKey = hex.EncodeToString(raw)
+			if err := os.WriteFile(keyPath, []byte(encKey), 0600); err != nil {
+				slog.Error("Failed to write encryption key file", "error", err, "path", keyPath)
+				os.Exit(1)
+			}
+			slog.Info("Generated new encryption key", "path", keyPath)
+		} else {
+			encKey = strings.TrimSpace(string(keyData))
+		}
+	}
 	if encKey != "" {
 		opts = append(opts, dsorm.WithEncryptionKey([]byte(encKey)))
 	}

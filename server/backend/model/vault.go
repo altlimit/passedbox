@@ -25,7 +25,7 @@ type Vault struct {
 	LastCheckInMethod string    `datastore:"lastCheckInMethod" json:"lastCheckInMethod"`             // "calendar", "webpush", "manual"
 	Released          bool      `datastore:"released" json:"released"`                               // Whether share3 has been released
 	ReleasedAt        time.Time `datastore:"releasedAt" json:"releasedAt"`                           // When it was released
-	Token             string    `datastore:"token,noindex,omitempty" json:"-"`                       // Secret token for check-in links
+	Token             string    `model:"token,encrypt" json:"-"`                                     // Secret token for check-in links
 	Credits           int64     `datastore:"credits" json:"credits"`                                 // Total credits purchased (incrementing)
 	ReleaseDate       time.Time `datastore:"releaseDate" json:"releaseDate"`                         // When vault will expire/release
 	HasPendingPayment bool      `datastore:"pendingPayment,omitempty" json:"hasPendingPayment"`      // Whether there are unconfirmed payments
@@ -49,13 +49,14 @@ type ServerConfig struct {
 	dsorm.Base
 	ID              string    `model:"id" json:"id"`
 	PublicKey       string    `datastore:"publicKey" json:"publicKey"`
-	PrivateKey      string    `datastore:"privateKey,noindex" json:"-"`
+	PrivateKey      string    `model:"privateKey,encrypt" json:"-"`
 	CreatedAt       time.Time `model:"created" json:"createdAt"`
-	AdminPassword   string    `datastore:"password" json:"-"`
-	JWTKey          string    `datastore:"jwtKey,noindex" json:"-"`
+	UpdatedAt       time.Time `model:"modified" json:"updatedAt"`
+	AdminPassword   string    `model:"password,encrypt" json:"-"`
+	JWTKey          string    `model:"jwtKey,encrypt" json:"-"`
 	PaymentEnabled  bool      `datastore:"paymentEnabled" json:"paymentEnabled"`
-	StripeSecretKey string    `datastore:"stripeSecretKey,noindex" json:"-"`
-	StripePriceID   string    `datastore:"stripePriceId" json:"-"`
+	StripeSecretKey string    `model:"stripeSecretKey,encrypt" json:"-"`
+	StripePriceID   string    `datastore:"stripePriceId,noindex" json:"-"`
 	BaseURL         string    `datastore:"baseUrl" json:"baseUrl"`
 }
 

@@ -91,6 +91,10 @@ func (t *Task) CheckDeadManSwitches(ctx context.Context) error {
 	}
 
 	now := time.Now()
+	config, err := model.Config(ctx)
+	if err != nil {
+		return err
+	}
 
 	for _, vault := range vaults {
 		shouldRelease := false
@@ -126,7 +130,7 @@ func (t *Task) CheckDeadManSwitches(ctx context.Context) error {
 				if err := t.PushSender.SendToVault(ctx, vault.ID, push.NotifyPayload{
 					Title: "Vault Released",
 					Body:  fmt.Sprintf("Your vault has been released (%s).", reason),
-					URL:   fmt.Sprintf("/checkin?id=%s&token=%s", vault.ID, vault.Token),
+					URL:   fmt.Sprintf("%s/checkin?id=%s&token=%s", config.BaseURL, vault.ID, vault.Token),
 					Tag:   "vault-released-" + vault.ID,
 				}); err != nil {
 					slog.Error("Worker: failed to send release notification for vault", "vaultId", vault.ID, "error", err)
@@ -151,6 +155,10 @@ func (t *Task) SendKeepAliveReminders(ctx context.Context) error {
 	}
 
 	now := time.Now()
+	config, err := model.Config(ctx)
+	if err != nil {
+		return err
+	}
 
 	for _, vault := range vaults {
 		if !vault.EnableKeepAlive || vault.KeepAliveDays <= 0 {
@@ -175,7 +183,7 @@ func (t *Task) SendKeepAliveReminders(ctx context.Context) error {
 			t.PushSender.SendToVault(ctx, vault.ID, push.NotifyPayload{
 				Title: "Check-In Reminder",
 				Body:  fmt.Sprintf("Please check in within %d day(s) to keep your vault active.", daysUntil),
-				URL:   fmt.Sprintf("/checkin?id=%s&token=%s", vault.ID, vault.Token),
+				URL:   fmt.Sprintf("%s/checkin?id=%s&token=%s", config.BaseURL, vault.ID, vault.Token),
 				Tag:   "checkin-reminder-" + vault.ID,
 			})
 
