@@ -9,15 +9,26 @@ title: Blog
         <p class="page-subtitle">News, release notes, and security insights from the PassedBox team.</p>
     </div>
 
+    {{ $posts := sort "Meta.date" "desc" (sources "RelPath" "blog/*.html") }}
+    {{ $paginated := paginate 6 $posts }}
+
     <div class="blog-grid grid">
+        {{ range $paginated }}
         <div class="blog-card glass-card">
-            <div class="blog-meta">Feb 21, 2026</div>
-            <h3><a href="{{.BasePath}}blog/welcome-to-passedbox">Introducing PassedBox: The Local-First Encrypted
-                    Vault</a></h3>
-            <p>Welcome to the first release of PassedBox. We built this because we believe your data should stay yours,
-                forever.</p>
-            <a href="{{.BasePath}}blog/welcome-to-passedbox" class="read-more">Read Article &rarr;</a>
+            <div class="blog-meta">{{ .Meta.date }}</div>
+            <h3><a href="{{.Path}}">{{ .Meta.title }}</a></h3>
+            <p>{{ .Meta.summary }}</p>
+            <a href="{{.Path}}" class="read-more">Read Article &rarr;</a>
         </div>
+        {{ end }}
     </div>
+
+    {{ if gt .Source.TotalPages 1 }}
+    <div class="pagination">
+        {{ range pages .Source }}
+        <a href="{{.Path}}" class="pagination-link {{if .Active}}active{{end}}">{{.Page}}</a>
+        {{ end }}
+    </div>
+    {{ end }}
 </section>
 {{end}}
