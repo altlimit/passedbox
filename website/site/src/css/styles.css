@@ -263,6 +263,7 @@ p {
     padding: 6rem 0;
     min-height: 80vh;
     position: relative;
+    overflow: hidden;
 }
 
 .hero-title {
@@ -312,6 +313,12 @@ p {
     background: rgba(59, 130, 246, 0.4);
     bottom: 0;
     right: 10%;
+}
+
+.mockup-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
 }
 
 .mockup-card {
@@ -755,6 +762,16 @@ code {
 
     .hero-title {
         font-size: 3rem;
+    }
+
+    .hero-visual {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .mockup-card {
+        width: 280px;
+        height: 340px;
     }
 
     .nav-links {

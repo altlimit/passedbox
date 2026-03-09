@@ -64,6 +64,13 @@ jobs:
       - name: Install Wails 3 CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
+      - name: Set Version in Config
+        working-directory: ./desktop
+        shell: bash
+        run: |
+          sed -i "s/version: \"0.0.1\"/version: \"0.0.${{ github.run_number }}\"/" build/config.yml
+          wails3 task common:update:build-assets
+
       - name: Build Application
         working-directory: ./desktop
         run: wails3 build EXTRA_LDFLAGS="-X main.AppVersion=${{ steps.version.outputs.tag }}"

@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A passedbox application
+Name=PassedBox
+Comment=Encrypted File System
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/passedbox.exe %u
+Exec=/usr/local/bin/passedbox %u
 Terminal=false
 Type=Application
-Icon=passedbox.exe
+Icon=passedbox
 Categories=Utility;
-StartupWMClass=passedbox.exe
+StartupWMClass=passedbox
 
  

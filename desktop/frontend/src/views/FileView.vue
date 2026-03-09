@@ -277,7 +277,7 @@ onUnmounted(() => {
         </button>
         <div class="file-info" v-if="fileMetadata">
             <h1>{{ fileMetadata.name }}</h1>
-            <span class="meta-text">{{ (fileMetadata.size / 1024).toFixed(1) }} KB &bull; {{ new Date(fileMetadata.createdAt).toLocaleDateString() }}</span>
+            <span class="meta-text">{{ ((fileMetadata.size || 0) / 1024).toFixed(1) }} KB &bull; {{ new Date(fileMetadata.createdAt).toLocaleDateString() }}</span>
         </div>
         <div v-else class="skeleton-header"></div>
       </div>

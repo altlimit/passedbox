@@ -13,21 +13,21 @@
         InstallLocation="C:\Program Files\My Company\My Product">
     </Installer>
     <PackageInformation
-        PackageName="My Product"
-        PackageDisplayName="My Product"
-        PublisherName="CN=My Company"
-        PublisherDisplayName="My Company"
+        PackageName="PassedBox"
+        PackageDisplayName="PassedBox"
+        PublisherName="CN=PassedBox"
+        PublisherDisplayName="PassedBox"
         Version="0.1.0.0"
-        PackageDescription="A passedbox application">
+        PackageDescription="Encrypted File System">
         <Capabilities>
             <Capability Name="runFullTrust" />
             
         </Capabilities>
         <Applications>
             <Application
-                Id="com.example.passedbox"
-                Description="A passedbox application"
-                DisplayName="My Product"
+                Id="com.passedbox.fs"
+                Description="Encrypted File System"
+                DisplayName="PassedBox"
                 ExecutableName="passedbox.exe"
                 EntryPoint="Windows.FullTrustApplication">
                 
@@ -41,9 +41,9 @@
         </Dependencies>
         <Properties>
             <Framework>false</Framework>
-            <DisplayName>My Product</DisplayName>
-            <PublisherDisplayName>My Company</PublisherDisplayName>
-            <Description>A passedbox application</Description>
+            <DisplayName>PassedBox</DisplayName>
+            <PublisherDisplayName>PassedBox</PublisherDisplayName>
+            <Description>Encrypted File System</Description>
             <Logo>Assets\AppIcon.png</Logo>
         </Properties>
     </PackageInformation>

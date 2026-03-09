@@ -38,6 +38,7 @@ type VaultManager struct {
 	dbMutex     sync.RWMutex
 	isCancelled atomic.Bool // Used to abort long-running tasks
 	ctx         context.Context
+	searchCache map[string][]*FileMetadata
 }
 
 type PathNode struct {
@@ -122,10 +123,16 @@ func (vm *VaultManager) emitProgress(op string, current, total int, message stri
 // NewVaultManager creates a new instance.
 func NewVaultManager() *VaultManager {
 	return &VaultManager{
-		MasterKeys: make(map[string][]byte),
-		openDBs:    make(map[string]*dsorm.Client),
-		ctx:        context.Background(),
+		MasterKeys:  make(map[string][]byte),
+		openDBs:     make(map[string]*dsorm.Client),
+		ctx:         context.Background(),
+		searchCache: make(map[string][]*FileMetadata),
 	}
+}
+
+// invalidateSearchCache removes the cached search data for a vault.
+func (vm *VaultManager) invalidateSearchCache(vaultName string) {
+	delete(vm.searchCache, vaultName)
 }
 
 func (vm *VaultManager) getDB(vaultName string) (*dsorm.Client, error) {
@@ -185,6 +192,8 @@ func (vm *VaultManager) LockVault(vaultName string) error {
 		delete(vm.MasterKeys, vaultName)
 	}
 
+	vm.invalidateSearchCache(vaultName)
+
 	vm.dbMutex.Lock()
 	defer vm.dbMutex.Unlock()
 	if db, ok := vm.openDBs[vaultName]; ok {
@@ -210,86 +219,6 @@ func (vm *VaultManager) loadFile(vaultName, fileID string) (*FileMetadata, error
 	}
 
 	return fm, nil
-}
-
-// SearchFiles searches across all unlocked vaults for files/folders matching the searchTerm.
-func (vm *VaultManager) SearchFiles(searchTerm string) ([]SearchResult, error) {
-	if len(vm.MasterKeys) == 0 {
-		return nil, nil
-	}
-
-	queryStr := strings.ToLower(strings.TrimSpace(searchTerm))
-	if queryStr == "" {
-		return nil, nil
-	}
-
-	vaults, err := vm.ListVaults()
-	if err != nil {
-		return nil, err
-	}
-
-	var results []SearchResult
-
-	for _, vault := range vaults {
-		masterKey, ok := vm.MasterKeys[vault.Name]
-		if !ok {
-			continue
-		}
-		ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
-		db, err := vm.getDB(vault.Name)
-		if err != nil {
-			continue
-		}
-
-		// Build full file index for this vault
-		allFiles := make(map[string]*FileMetadata)
-
-		q := dsorm.NewQuery("Filemetadata").FilterField("isDeleted", "=", false)
-		files, _, err := dsorm.Query[*FileMetadata](ctx, db, q, "")
-		if err != nil {
-			continue
-		}
-
-		// Search and build results
-		for _, meta := range files {
-			if meta.IsDeleted {
-				continue
-			}
-			if strings.Contains(strings.ToLower(meta.Name), queryStr) {
-				// Build path breadcrumb
-				pathStr, pathNodes := buildPath(allFiles, meta.ParentID)
-				results = append(results, SearchResult{
-					ID:        meta.ID,
-					Name:      meta.Name,
-					IsFolder:  meta.IsFolder,
-					Size:      meta.Size,
-					VaultName: vault.Name,
-					ParentID:  meta.ParentID,
-					Path:      pathStr,
-					PathNodes: pathNodes,
-				})
-			}
-		}
-	}
-
-	return results, nil
-}
-
-// buildPath builds a breadcrumb string and structured node array from parentID up to root
-func buildPath(allFiles map[string]*FileMetadata, parentID string) (string, []PathNode) {
-	var parts []string
-	var nodes []PathNode
-	current := parentID
-	for current != "" {
-		if f, ok := allFiles[current]; ok {
-			parts = append([]string{f.Name}, parts...)
-			nodes = append([]PathNode{{ID: f.ID, Name: f.Name}}, nodes...)
-			current = f.ParentID
-		} else {
-			break
-		}
-	}
-	return strings.Join(parts, " › "), nodes
 }
 
 // ListVaults scans the current directory for folders ending with .vault
@@ -509,6 +438,7 @@ func (vm *VaultManager) ImportFile(vaultName, parentID, sourcePath string) (stri
 		return "", err
 	}
 
+	vm.invalidateSearchCache(vaultName)
 	return fm.ID, nil
 }
 
@@ -964,6 +894,7 @@ func (vm *VaultManager) CopyFiles(vaultName, targetParentID string, sourceIDs []
 			return err
 		}
 	}
+	vm.invalidateSearchCache(vaultName)
 	return nil
 }
 
@@ -1097,7 +1028,12 @@ func (vm *VaultManager) CreateFolder(vaultName, parentID, folderName string) (st
 		return "", err
 	}
 
-	return vm.newFolder(db, parentID, folderName, masterKey)
+	id, err := vm.newFolder(db, parentID, folderName, masterKey)
+	if err != nil {
+		return "", err
+	}
+	vm.invalidateSearchCache(vaultName)
+	return id, nil
 }
 
 func (vm *VaultManager) newFolder(db *dsorm.Client, parentID string, folderName string, masterKey []byte) (string, error) {
@@ -1109,7 +1045,10 @@ func (vm *VaultManager) newFolder(db *dsorm.Client, parentID string, folderName 
 		IsFolder:  true,
 	}
 	ctx := dsorm.WithEncryptionKeyContext(vm.ctx, masterKey)
-	return meta.ID, db.Put(ctx, meta)
+	if err := db.Put(ctx, meta); err != nil {
+		return "", err
+	}
+	return meta.ID, nil
 }
 
 // MoveFile updates a file or folder's parent ID (moves it to a different folder).
@@ -1135,7 +1074,11 @@ func (vm *VaultManager) MoveFile(vaultName, fileID, newParentID string) error {
 	}
 
 	meta.ParentID = newParentID
-	return db.Put(ctx, meta)
+	if err := db.Put(ctx, meta); err != nil {
+		return err
+	}
+	vm.invalidateSearchCache(vaultName)
+	return nil
 }
 
 // RenameFile renames a file or folder in the vault.
@@ -1155,7 +1098,11 @@ func (vm *VaultManager) RenameFile(vaultName, fileID, newName string) error {
 		return errors.New("file not found")
 	}
 	meta.Name = newName
-	return db.Put(ctx, meta)
+	if err := db.Put(ctx, meta); err != nil {
+		return err
+	}
+	vm.invalidateSearchCache(vaultName)
+	return nil
 }
 
 // DeleteFile removes a file or folder from the vault.
@@ -1245,6 +1192,7 @@ func (vm *VaultManager) DeleteFile(vaultName, fileID string) error {
 		blobPath := filepath.Join(blobDir, id)
 		os.Remove(blobPath)
 	}
+	vm.invalidateSearchCache(vaultName)
 	return nil
 }
 
@@ -1362,6 +1310,7 @@ func (vm *VaultManager) CopyAcrossVaults(sourceVault, targetVault, targetParentI
 		}
 	}
 	vm.emitProgress("copy", totalToCopy, totalToCopy, "Copy complete")
+	vm.invalidateSearchCache(targetVault)
 	return nil
 }
 

@@ -749,7 +749,7 @@ const handleCancelOperation = async (op: string) => {
   showConfirm(`Are you sure you want to cancel the active ${op} operation?`, async () => {
     try {
       await CancelAction();
-      addToast('Cancellation requested...', 'info');
+      addToast('Operation cancelled', 'info');
       uploadQueue.value = [];
       progressState.value.active = false;
     } catch (e) {
