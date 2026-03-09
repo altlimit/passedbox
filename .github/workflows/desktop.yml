@@ -68,7 +68,11 @@ jobs:
         working-directory: ./desktop
         shell: bash
         run: |
-          sed -i "s/version: \"0.0.1\"/version: \"0.0.${{ github.run_number }}\"/" build/config.yml
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/version: \"0.0.1\"/version: \"0.0.${{ github.run_number }}\"/" build/config.yml
+          else
+            sed -i "s/version: \"0.0.1\"/version: \"0.0.${{ github.run_number }}\"/" build/config.yml
+          fi
           wails3 task common:update:build-assets
 
       - name: Build Application
